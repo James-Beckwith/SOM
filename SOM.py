@@ -17,7 +17,7 @@ import numpy as np
 class SOM:
 
     # initialisation
-    def __init__(self, input, somShape=[8,8], neighbourSize=10, learningRate=1, learningDecay=100, neighbourDecay=100, numEpochs=10000, flag1DGeneric = False, weightInitSigma=0.01, weightInitMean=0.0):
+    def __init__(self, input, somShape=[8,8], neighbourSize=10.0, learningRate=1.0, learningDecay=1000.0, neighbourDecay=1000.0, numEpochs=10000, flag1DGeneric = False, weightInitSigma=0.01, weightInitMean=0.0):
 
         # determine input shape and size
         somShape = np.array(somShape)
@@ -43,7 +43,9 @@ class SOM:
         # initialise other variables
         self.input = input
         self.learningRate = learningRate
+        self.learningRate0 = learningRate
         self.neighbourSize = neighbourSize
+        self.neighbourSize0 = neighbourSize
         self.learningDecay = learningDecay
         self.neighbourDecay = neighbourDecay
         self.numEpochs = numEpochs
@@ -51,6 +53,7 @@ class SOM:
         self.epoch = 0.0
         self.currentExample = []
         self.Nfeature = np.shape(input)[1]
+        self.Nexample = np.shape(input)[0]
 
         # initialise weights
         self.weights = weightInitMean + weightInitSigma * np.random.randn(self.Nfeature, self.Nneuron)
@@ -61,22 +64,30 @@ class SOM:
             # select a random example from the input
             self.currentExample = self.input[np.random.randint(self.Nneuron),:]
             # run competition
-            self.competition()
+            self.winningNeuron = self.competition()
             #run adaptation
             self.adaptation()
             #update learning rate and neighoburhood size
-            self.learningRate *= np.exp(-self.epoch / self.learningDecay)
-            self.neighbourSize *= np.exp(-self.epoch / self.neighbourDecay)
+            self.learningRate = self.learningRate0 * np.exp(-self.epoch / self.learningDecay)
+            self.neighbourSize = self.neighbourSize0 * np.exp(-self.epoch / self.neighbourDecay)
             self.epoch += 1
+
+        #final competition to find best matching neuron for each input example
+        self.finalNeuron = np.zeros(self.Nexample)
+        for i in range(self.Nexample):
+            self.currentExample = self.input[i,:]
+            self.finalNeuron[i] = self.competition()
 
     # run competition phase and decide winning neuron
     def competition(self):
         # find minimum distance between selected example features and SOM weights
         distances = np.zeros(self.Nneuron)
         for i in range(self.Nfeature):
-            distances += (self.currentExample[i] - self.weights[i,:]) ** 2
+            distances += (self.currentExample[i] - self.weights[i,:]) ** 2.0
 
-        self.winningNeuron = np.argmin(distances)
+        winningNeuron = np.argmin(distances)
+
+        return winningNeuron
 
     def adaptation(self):
         # adapt weghts based on best winning neuron
@@ -84,10 +95,11 @@ class SOM:
         winningNeuronLoc = self.neuronLocs[:,self.winningNeuron]
         distances = np.zeros(self.Nneuron)
         for i in range(self.Nneuron):
-            distances[i] = sum((winningNeuronLoc - self.neuronLocs[:,i]) ** 2) ** 0.5
+            distances[i] = sum((winningNeuronLoc - self.neuronLocs[:,i]) ** 2.0) ** 0.5
 
         #define neighbourhood for contrbution for all neurons
-        neighbourhood = np.exp(-distances / self.neighbourSize ** 2)
+        print(self.neighbourSize)
+        neighbourhood = np.exp(-distances / (self.neighbourSize) ** 2.0)
 
         # define error as difference between selected example and winning neurons
         # weights
