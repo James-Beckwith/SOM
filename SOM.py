@@ -74,9 +74,11 @@ class SOM:
 
         #final competition to find best matching neuron for each input example
         self.finalNeuron = np.zeros(self.Nexample)
+        self.finalNeuronXY = np.zeros(np.shape(self.neuronLocs))
         for i in range(self.Nexample):
             self.currentExample = self.input[i,:]
             self.finalNeuron[i] = self.competition()
+            self.finalNeuronXY[i] = self.neuronLocs[:,self.finalNeuron[i]]
 
     # run competition phase and decide winning neuron
     def competition(self):
