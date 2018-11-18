@@ -17,7 +17,7 @@ import numpy as np
 class SOM:
 
     # initialisation
-    def __init__(self, input, somShape=[8,8], neighbourSize=10.0, learningRate=1.0, learningDecay=1000.0, neighbourDecay=1000.0, numEpochs=10000, flag1DGeneric = False, weightInitSigma=0.01, weightInitMean=0.0):
+    def __init__(self, input, somShape=[8,8], neighbourSize=5.0, learningRate=1.0, learningDecay=1000.0, neighbourDecay=1000.0, numEpochs=10000, flag1DGeneric = False, weightInitSigma=0.01, weightInitMean=0.0):
 
         # determine input shape and size
         somShape = np.array(somShape)
@@ -52,8 +52,8 @@ class SOM:
         self.winningNeuron = []
         self.epoch = 0.0
         self.currentExample = []
-        self.Nfeature = np.shape(input)[1]
-        self.Nexample = np.shape(input)[0]
+        #self.Nfeature = np.shape(input)[1]
+        self.Nexample, self.Nfeature = np.shape(input)
 
         # initialise weights
         self.weights = weightInitMean + weightInitSigma * np.random.randn(self.Nfeature, self.Nneuron)
@@ -61,6 +61,7 @@ class SOM:
     # function to competition adn adaptation
     def run(self):
         for i in range(self.numEpochs):
+            print('Epoch: %i' % i)
             # select a random example from the input
             self.currentExample = self.input[np.random.randint(self.Nneuron),:]
             # run competition
@@ -79,6 +80,8 @@ class SOM:
             self.currentExample = self.input[i,:]
             self.finalNeuron[i] = self.competition()
             self.finalNeuronXY[:,i] = self.neuronLocs[:,int(self.finalNeuron[i])]
+            if np.mod(i,10000)==0:
+                print('%i of final examples analysed' % i)
 
     # run competition phase and decide winning neuron
     def competition(self):
@@ -100,7 +103,7 @@ class SOM:
             distances[i] = sum((winningNeuronLoc - self.neuronLocs[:,i]) ** 2.0) ** 0.5
 
         #define neighbourhood for contrbution for all neurons
-        neighbourhood = np.exp(-distances / (self.neighbourSize) ** 2.0)
+        neighbourhood = np.exp(-((distances / self.neighbourSize) ** 2.0))
 
         # define error as difference between selected example and winning neurons
         # weights
